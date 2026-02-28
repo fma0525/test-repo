@@ -245,6 +245,7 @@
 | **柔和卡通風** | DALL-E 3 / Flux | 圓潤線條、明亮色彩、最容易生成角色 |
 | **水彩繪本風** | Midjourney / Flux | 柔美、有手繪感、適合溫馨故事 |
 | **蠟筆塗鴉風** | Flux + style prompt | 童趣感強、像孩子自己畫的 |
+| **韓系水彩手繪風** | Midjourney / Flux | 韓式繪本質感、水彩+不透明水彩、暖色大地色調、細膩自然場景、擬人化小動物、微型世界視角、手繪紙質感 |
 
 > 選定後可在家長設定中切換，切換不影響已生成的故事
 
@@ -831,9 +832,10 @@ enum StoryStyle: String, Codable, CaseIterable {
 }
 
 enum ArtStyle: String, Codable, CaseIterable {
-    case softCartoon = "柔和卡通風"     // 初期預設
-    case watercolor = "水彩繪本風"      // 初期預設
-    case crayon = "蠟筆塗鴉風"         // 初期預設
+    case softCartoon = "柔和卡通風"         // 初期預設
+    case watercolor = "水彩繪本風"          // 初期預設
+    case crayon = "蠟筆塗鴉風"             // 初期預設
+    case koreanGouache = "韓系水彩手繪風"   // 韓式繪本・水彩+gouache・暖色調自然場景
     // 未來擴展：剪紙風、像素風等
 }
 

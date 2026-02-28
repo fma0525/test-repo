@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { addMockStory, isMockMode } from "@/lib/mock-data";
-import { GenerateRequest } from "@/lib/types";
+import { GenerateRequest, ArtStyle, ART_STYLE_INFO } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as GenerateRequest;
@@ -26,8 +26,10 @@ export async function POST(request: NextRequest) {
     const storyData = await generateStoryText(keywords, style);
 
     // Step 2: Generate cover image + voice in parallel
+    // TODO: artStyle should come from user account settings
+    const artStyle: ArtStyle = "koreanGouache";
     const [coverUrl, audioUrl] = await Promise.all([
-      generateCoverImage(storyData.cover_prompt),
+      generateCoverImage(storyData.cover_prompt, artStyle),
       generateVoice(storyData.full_text),
     ]);
 
@@ -123,9 +125,14 @@ async function generateStoryText(
   return JSON.parse(jsonMatch[0]);
 }
 
-async function generateCoverImage(prompt: string): Promise<string> {
+async function generateCoverImage(
+  prompt: string,
+  artStyle: ArtStyle = "softCartoon"
+): Promise<string> {
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
   if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY not configured");
+
+  const stylePrompt = ART_STYLE_INFO[artStyle].prompt;
 
   const response = await fetch(
     "https://api.openai.com/v1/images/generations",
@@ -137,7 +144,7 @@ async function generateCoverImage(prompt: string): Promise<string> {
       },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: `Children's picture book illustration, cute and colorful: ${prompt}`,
+        prompt: `${stylePrompt}. Scene: ${prompt}`,
         n: 1,
         size: "1024x1024",
         quality: "standard",
