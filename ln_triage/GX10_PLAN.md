@@ -38,11 +38,16 @@
 三個架構都跑，seed 0，1024² 輸入，16 µm/px：
 `for A in effb0 resnet18 mnv3; do python3 train.py --arch $A --out runs/base-$A; done`
 - 用 validation 的 AUC 和 spec@sens0.98 選架構，test 只在最後看一次
-- 陽性只有約 110 張，分數會不穩，所以最後選定的設定要跑 3 個 seed 或做 5-fold
+- 陽性只有約 110 張，分數會不穩，選定架構後再跑：
+  - `MODE=cv ARCH=<選定> bash run_cv.sh`：5-fold，用 case 切分，彙整各 fold 的測試結果
+  - `MODE=seeds ARCH=<選定> bash run_cv.sh`：固定切分，跑 3 個初始化 seed
+  - 兩者都會自動跑 `summarize_runs.py`（各 run 加總，對照 POC 門檻）和 `errors_sheet.py`
+- 如果 B 階段發現 GPU 在等資料：先跑 `python3 prep_cache.py --mpp 16`，訓練時加 `--meta data/cache16_meta.jsonl`
 
 ## F. 檢查
 - `skcm_only_auc`：混淆檢查。整體 AUC 高但這個低，代表模型學到的是癌別，不是淋巴結
-- 逐張看 FN 和 FP 的縮圖，分類整理錯誤類型
+- 逐張看 FN 和 FP 的縮圖：用 `python3 errors_sheet.py --run runs/<run>` 產生檢視頁，分類整理錯誤類型。發現標籤錯的，直接在頁面上改，存成 `review.csv`
+- 標記筆痕跡：TCGA 有些片子有很粗的筆痕。檢查判錯的片子是不是跟筆痕有關，若是，就加筆痕偵測或遮罩
 - CPU latency：GX10 是 ARM 的 Grace CPU，量出來不代表院內 x86 伺服器的表現，要另外在 x86 機器上跑 `export_infer.py bench --threads 4`
 
 ## G. POC 判定
@@ -57,6 +62,6 @@
 沒通過的話，先看錯誤類型：是資料問題（標籤、數量），還是模型問題（解析度、架構）。
 
 ## 跑 GX10 之前程式還要補的
-- [ ] 錯誤分析頁：產生 FN 和 FP 的縮圖頁，沿用 `review_sheet.py`
-- [ ] `train.py` 加 `--fold` 參數，支援 5-fold CV
-- [ ] 縮圖預處理快取：如果 B 階段發現被 dataloader 拖住，預先存成 16 µm/px 的 npy
+- [x] 錯誤分析頁：`errors_sheet.py`
+- [x] 5-fold CV 和多 seed：`train.py --folds/--fold/--split-seed`、`run_cv.sh`、`summarize_runs.py`
+- [x] 縮圖預處理快取：`prep_cache.py`

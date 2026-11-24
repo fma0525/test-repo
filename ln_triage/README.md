@@ -13,6 +13,8 @@
 | 3 | `review_sheet.py` | `data/review_sheet.html`：給病理醫師點選確認標籤，下載 `review.csv` 放到 `data/` |
 | 4 | `train.py` | `runs/<run>/best.pt`、`metrics.json`、`predictions.csv`、`split.csv` |
 | 5 | `export_infer.py` | `model.onnx`、`model.json`、CPU latency、單張推論 JSON |
+| 6 | `run_cv.sh` → `summarize_runs.py`、`errors_sheet.py` | 5-fold 或多 seed 的彙整表、POC 門檻判定、判錯片子檢視頁 |
+| 選用 | `prep_cache.py` | 預先縮到訓練解析度並裁到組織範圍，GPU 等資料時使用 |
 
 一鍵跑完（可中斷、重跑會接續）：
 

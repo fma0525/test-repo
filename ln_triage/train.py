@@ -61,8 +61,12 @@ def load_table(args):
     return rows
 
 
-def split_cases(rows, seed, frac=(0.7, 0.15, 0.15)):
-    """Patient-level, label-stratified split. A case is 'positive' if any slide is."""
+def split_cases(rows, seed, frac=(0.7, 0.15, 0.15), folds=0, fold=0):
+    """Patient-level, label-stratified split. A case is 'positive' if any slide is.
+
+    folds=0 : fixed train/val/test by `frac`.
+    folds=K : case-level K-fold; test = fold `fold`, val = fold `fold+1`, rest train.
+    """
     case_lab = {}
     for r in rows:
         case_lab[r["case_id"]] = max(case_lab.get(r["case_id"], 0), r["label"])
@@ -71,6 +75,11 @@ def split_cases(rows, seed, frac=(0.7, 0.15, 0.15)):
         cs = sorted(c for c, l in case_lab.items() if l == lab)
         cs.sort(key=lambda c: hashlib.md5(f"{seed}{c}".encode()).hexdigest())
         n = len(cs)
+        if folds:
+            for i, c in enumerate(cs):  # round-robin keeps label balance per fold
+                k = i % folds
+                out[c] = "test" if k == fold else ("val" if k == (fold + 1) % folds else "train")
+            continue
         a, b = round(n * frac[0]), round(n * (frac[0] + frac[1]))
         for i, c in enumerate(cs):
             out[c] = "train" if i < a else ("val" if i < b else "test")
@@ -206,7 +215,10 @@ def main():
     ap.add_argument("--pos-frac", type=float, default=0.3, help="positive share per batch")
     ap.add_argument("--target-sens", type=float, default=0.98)
     ap.add_argument("--workers", type=int, default=min(16, os.cpu_count() or 4))
-    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--seed", type=int, default=0, help="init / sampling seed")
+    ap.add_argument("--split-seed", type=int, default=0, help="keep fixed across seeds")
+    ap.add_argument("--folds", type=int, default=0, help="K-fold CV (0 = fixed 70/15/15)")
+    ap.add_argument("--fold", type=int, default=0)
     ap.add_argument("--patience", type=int, default=10)
     args = ap.parse_args()
 
@@ -214,7 +226,7 @@ def main():
     os.makedirs(args.out, exist_ok=True)
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     amp = dev.type == "cuda" and torch.cuda.is_bf16_supported()
-    rows = split_cases(load_table(args), args.seed)
+    rows = split_cases(load_table(args), args.split_seed, folds=args.folds, fold=args.fold)
     S = {s: [r for r in rows if r["split"] == s] for s in ("train", "val", "test")}
     summ = {s: {"n": len(v), "pos": sum(r["label"] for r in v)} for s, v in S.items()}
     print("device", dev, "bf16", amp, json.dumps(summ), flush=True)
