@@ -4,3 +4,4 @@ data/*.log
 data/review_sheet.html
 runs/
 __pycache__/
+data/cache*/
