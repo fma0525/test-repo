@@ -1,0 +1,6 @@
+data/thumbs/
+data/*.jsonl
+data/*.log
+data/review_sheet.html
+runs/
+__pycache__/

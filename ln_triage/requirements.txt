@@ -1,0 +1,9 @@
+tifffile
+imagecodecs
+requests
+pillow
+numpy
+scikit-learn
+onnx
+onnxruntime
+# torch / torchvision: use the NGC container's build on GX10
